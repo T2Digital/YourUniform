@@ -191,7 +191,7 @@ document.getElementById('submitOrder').addEventListener('click', async () => {
     const formData = new FormData();
     formData.append('image', canvas.toDataURL('image/png').split(',')[1]);
     try {
-      const response = await fetch('https://api.imgbb.com/1/upload?key=YOUR_IMGBB_API_KEY', {
+      const response = await fetch('https://api.imgbb.com/1/upload?key=bde613bd4475de5e00274a795091ba04', {
         method: 'POST',
         body: formData
       });
@@ -213,7 +213,7 @@ document.getElementById('submitOrder').addEventListener('click', async () => {
                        `اليونيفورم: ${document.getElementById('uniformType').value} (${document.getElementById('uniformColor').value})\n` +
                        `الكمية: ${quantity}\n` +
                        `رابط التصميم: ${imageUrl || 'لا يوجد تصميم'}`;
-  const whatsappUrl = `https://wa.me/YOUR_WHATSAPP_NUMBER?text=${encodeURIComponent(orderDetails)}`;
+  const whatsappUrl = `https://wa.me/+201030956097?text=${encodeURIComponent(orderDetails)}`;
 
   // Redirect to WhatsApp
   window.open(whatsappUrl, '_blank');
