@@ -35,15 +35,22 @@ function showFeedback(message, type = 'info') {
 // Load Uniform
 function loadUniform() {
   uniformImg.src = uniforms[currentUniform] || 'images/tshirt_white_front.png';
-  uniformImg.onload = drawCanvas;
-  uniformImg.onerror = () => showFeedback('خطأ في تحميل صورة اليونيفورم!', 'danger');
+  uniformImg.onload = () => {
+    drawCanvas();
+    console.log('Uniform loaded:', currentUniform);
+  };
+  uniformImg.onerror = () => {
+    showFeedback('خطأ في تحميل صورة اليونيفورم!', 'danger');
+    console.error('Failed to load uniform:', currentUniform);
+  };
 }
 
 // Draw Canvas
 function drawCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(uniformImg, 0, 0, canvas.width, canvas.height);
-
+  if (uniformImg.src) {
+    ctx.drawImage(uniformImg, 0, 0, canvas.width, canvas.height);
+  }
   if (logoImg.src) {
     ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
   }
@@ -73,8 +80,12 @@ document.getElementById('logoUpload').addEventListener('change', function(event)
       logoImg.onload = () => {
         drawCanvas();
         showFeedback('تم رفع الشعار بنجاح! المس الشعار لتحريكه.', 'success');
+        console.log('Logo loaded successfully');
       };
-      logoImg.onerror = () => showFeedback('خطأ في تحميل الشعار!', 'danger');
+      logoImg.onerror = () => {
+        showFeedback('خطأ في تحميل الشعار!', 'danger');
+        console.error('Failed to load logo');
+      };
     };
     reader.readAsDataURL(file);
   } else {
@@ -152,13 +163,16 @@ document.getElementById('flipBtn').addEventListener('click', () => {
 document.getElementById('saveBtn').addEventListener('click', () => {
   if (uniformImg.src) {
     try {
+      const dataUrl = canvas.toDataURL('image/png');
+      console.log('Canvas data URL length:', dataUrl.length); // Debug
       const link = document.createElement('a');
       link.download = 'your_uniform_design.png';
-      link.href = canvas.toDataURL('image/png');
+      link.href = dataUrl;
       link.click();
       showFeedback('تم حفظ التصميم بنجاح!', 'success');
     } catch (error) {
-      showFeedback('فشل حفظ التصميم! حاول مرة أخرى.', 'danger');
+      console.error('Save error:', error); // Debug
+      showFeedback('فشل حفظ التصميم! تأكد من تحميل الصور.', 'danger');
     }
   } else {
     showFeedback('لا يوجد تصميم لحفظه!', 'warning');
@@ -177,7 +191,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   showFeedback('تم إعادة ضبط التصميم!', 'info');
 });
 
-// Order Modal Handling
+// Order Form Submission
 const orderModal = document.getElementById('orderModal');
 const orderForm = document.getElementById('orderForm');
 
@@ -185,7 +199,8 @@ orderModal.addEventListener('show.bs.modal', () => {
   document.getElementById('orderModalLabel').textContent = 'طلب كمية';
 });
 
-document.getElementById('submitOrder').addEventListener('click', async () => {
+orderForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
   const name = document.getElementById('name').value;
   const phone = document.getElementById('phone').value;
   const size = document.getElementById('size').value;
@@ -209,11 +224,14 @@ document.getElementById('submitOrder').addEventListener('click', async () => {
       const data = await response.json();
       if (data.success) {
         imageUrl = data.data.url;
+        console.log('Image uploaded to imgbb:', imageUrl); // Debug
       } else {
         showFeedback('فشل رفع الصورة!', 'danger');
+        console.error('imgbb error:', data); // Debug
       }
     } catch (error) {
       showFeedback('خطأ في الاتصال بـ imgbb!', 'danger');
+      console.error('imgbb fetch error:', error); // Debug
     }
   }
 
@@ -234,7 +252,8 @@ document.getElementById('submitOrder').addEventListener('click', async () => {
     bootstrap.Modal.getInstance(orderModal).hide();
     orderForm.reset();
   } catch (error) {
-    showFeedback('فشل التحويل إلى واتساب!', 'danger');
+    showFeedback('فشل التحويل إلى واتساب! تأكد من رقم الواتساب.', 'danger');
+    console.error('WhatsApp error:', error); // Debug
   }
 });
 
