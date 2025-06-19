@@ -58,6 +58,19 @@ async function loadImage(url) {
   }
 }
 
+// Compress Canvas Image
+async function compressCanvasImage(canvas, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error('Failed to compress canvas image'));
+      }
+    }, 'image/jpeg', quality);
+  });
+}
+
 // Load Uniform
 async function loadUniform() {
   try {
@@ -319,26 +332,31 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 
 // Upload Image to ImgBB
 async function uploadProof(file) {
-  if (!file) return null;
+  if (!file) {
+    console.warn('No file provided for upload');
+    return null;
+  }
 
   const apiKey = 'bde613bd4475de5e00274a795091ba04'; // Replace with your ImgBB API key
   const formData = new FormData();
   formData.append('image', file);
 
   try {
+    console.log('Uploading image to ImgBB...');
     const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
       method: 'POST',
       body: formData
     });
     const data = await response.json();
     if (data.success) {
-      console.log('Image uploaded to imgbb:', data.data.url);
+      console.log('Image uploaded successfully:', data.data.url);
       return data.data.url;
+    } else {
+      throw new Error(data.error.message || 'Failed to upload image');
     }
-    throw new Error(data.error.message || 'فشل رفع الصورة');
   } catch (error) {
-    showFeedback('خطأ أثناء رفع الصورة!', 'danger');
-    console.error('Upload Error:', error);
+    console.error('Upload Error:', error.message);
+    showFeedback(`خطأ أثناء رفع الصورة: ${error.message}`, 'danger');
     return null;
   }
 }
@@ -361,7 +379,7 @@ document.getElementById('addSizeBtn').addEventListener('click', () => {
   const newRow = document.createElement('tr');
   newRow.innerHTML = `
     <td>
-      <select class="form-control size-select" required>
+      <select class="form-control size-select" required aria-label="اختيار المقاس">
         <option value="" disabled selected>اختر المقاس</option>
         <option value="M">M</option>
         <option value="L">L</option>
@@ -371,10 +389,10 @@ document.getElementById('addSizeBtn').addEventListener('click', () => {
       </select>
     </td>
     <td>
-      <input type="number" class="form-control quantity-input" min="1" required>
+      <input type="number" class="form-control quantity-input" min="1" required aria-label="إدخال الكمية">
     </td>
     <td>
-      <button type="button" class="btn btn-danger btn-sm remove-row"><i class="bi bi-trash"></i></button>
+      <button type="button" class="btn btn-danger btn-sm remove-row" aria-label="إزالة السطر"><i class="bi bi-trash"></i></button>
     </td>
   `;
   tableBody.appendChild(newRow);
@@ -421,14 +439,20 @@ document.getElementById('submitOrderBtn').addEventListener('click', async () => 
   // Upload design to ImgBB
   let imageUrl = '';
   try {
-    let canvasData = canvas.toDataURL('image/png');
+    console.log('Exporting canvas for upload...');
+    let canvasData = canvas.toDataURL('image/jpeg', 0.7); // Reduced quality for faster upload
     if (canvasData.length < 100) {
-      const canvasElement = await html2canvas(document.getElementById('uniformCanvas'));
-      canvasData = canvasElement.toDataURL('image/png');
+      console.warn('Canvas toDataURL failed, falling back to html2canvas');
+      const canvasElement = await html2canvas(document.getElementById('uniformCanvas'), { scale: 1 });
+      canvasData = canvasElement.toDataURL('image/jpeg', 0.7);
       if (canvasData.length < 100) throw new Error('Canvas is empty');
     }
-    const blob = await (await fetch(canvasData)).blob();
+    const blob = await compressCanvasImage(canvas, 0.7);
+    console.log('Canvas exported, size:', blob.size / 1024, 'KB');
     imageUrl = await uploadProof(blob);
+    if (!imageUrl) {
+      throw new Error('Image upload failed');
+    }
   } catch (error) {
     console.error('Canvas upload error:', error);
     showFeedback('فشل رفع الصورة، سيتم إرسال الطلب بدون صورة.', 'warning');
@@ -450,6 +474,7 @@ document.getElementById('submitOrderBtn').addEventListener('click', async () => 
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 
   try {
+    console.log('Opening WhatsApp with URL:', whatsappUrl);
     const whatsappWindow = window.open(whatsappUrl, '_blank');
     if (!whatsappWindow || whatsappWindow.closed) {
       showFeedback('يرجى تثبيت تطبيق WhatsApp أو السماح بفتح الروابط.', 'danger');
@@ -460,7 +485,7 @@ document.getElementById('submitOrderBtn').addEventListener('click', async () => 
       document.querySelector('#sizeQuantityTable tbody').innerHTML = `
         <tr>
           <td>
-            <select class="form-control size-select" required>
+            <select class="form-control size-select" required aria-label="اختيار المقاس">
               <option value="" disabled selected>اختر المقاس</option>
               <option value="M">M</option>
               <option value="L">L</option>
@@ -470,17 +495,17 @@ document.getElementById('submitOrderBtn').addEventListener('click', async () => 
             </select>
           </td>
           <td>
-            <input type="number" class="form-control quantity-input" min="1" required>
+            <input type="number" class="form-control quantity-input" min="1" required aria-label="إدخال الكمية">
           </td>
           <td>
-            <button type="button" class="btn btn-danger btn-sm remove-row"><i class="bi bi-trash"></i></button>
+            <button type="button" class="btn btn-danger btn-sm remove-row" aria-label="إزالة السطر"><i class="bi bi-trash"></i></button>
           </td>
         </tr>
       `;
     }
   } catch (error) {
-    showFeedback('خطأ أثناء فتح WhatsApp!', 'danger');
     console.error('WhatsApp Error:', error);
+    showFeedback('خطأ أثناء فتح WhatsApp!', 'danger');
   }
 });
 
