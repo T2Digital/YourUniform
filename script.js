@@ -321,7 +321,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 async function uploadProof(file) {
   if (!file) return null;
 
-  const apiKey = 'YOUR_IMGBB_API_KEY'; // Replace with your ImgBB API key
+  const apiKey = 'bde613bd4475de5e00274a795091ba04'; // Replace with your ImgBB API key
   const formData = new FormData();
   formData.append('image', file);
 
