@@ -268,56 +268,48 @@ document.getElementById('savePdfBtn').addEventListener('click', async () => {
   const pdf = new jsPDF();
 
   try {
-    console.log('Starting PDF export...');
-    // Save Front View
-    let frontDataUrl = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG with quality 0.8 for smaller size
+    // Save Front
+    let frontDataUrl = canvas.toDataURL('image/png');
     if (frontDataUrl.length < 100) {
-      console.warn('Canvas toDataURL failed for front view, falling back to html2canvas');
-      const canvasElement = await html2canvas(document.getElementById('uniformCanvas'), { scale: 1 });
-      frontDataUrl = canvasElement.toDataURL('image/jpeg', 0.8);
+      const canvasElement = await html2canvas(document.getElementById('uniformCanvas'));
+      frontDataUrl = canvasElement.toDataURL('image/png');
       if (frontDataUrl.length < 100) throw new Error('Front canvas is empty');
     }
-    console.log('Front view exported, size:', frontDataUrl.length);
-    pdf.addImage(frontDataUrl, 'JPEG', 10, 10, 190, 190);
-    pdf.setFont('Helvetica', 'normal');
+    pdf.addImage(frontDataUrl, 'PNG', 10, 10, 190, 190);
+    pdf.setFont('Helvetica');
     pdf.setFontSize(12);
     pdf.text('Front View', 10, 205);
 
-    // Switch to Back View
-    console.log('Switching to back view...');
+    // Switch to Back
     isFront = false;
     const type = document.getElementById('uniformType').value;
     const color = document.getElementById('uniformColor').value;
     currentUniform = `${type}_${color}_back`;
     await loadUniform();
-    await new Promise(resolve => setTimeout(resolve, 500)); // Increased timeout for image loading
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-    let backDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    let backDataUrl = canvas.toDataURL('image/png');
     if (backDataUrl.length < 100) {
-      console.warn('Canvas toDataURL failed for back view, falling back to html2canvas');
-      const canvasElement = await html2canvas(document.getElementById('uniformCanvas'), { scale: 1 });
-      backDataUrl = canvasElement.toDataURL('image/jpeg', 0.8);
+      const canvasElement = await html2canvas(document.getElementById('uniformCanvas'));
+      backDataUrl = canvasElement.toDataURL('image/png');
       if (backDataUrl.length < 100) throw new Error('Back canvas is empty');
     }
-    console.log('Back view exported, size:', backDataUrl.length);
     pdf.addPage();
-    pdf.addImage(backDataUrl, 'JPEG', 10, 10, 190, 190);
-    pdf.setFont('Helvetica', 'normal');
+    pdf.addImage(backDataUrl, 'PNG', 10, 10, 190, 190);
+    pdf.setFont('Helvetica');
     pdf.setFontSize(12);
     pdf.text('Back View', 10, 205);
 
-    // Revert to Front View
-    console.log('Reverting to front view...');
+    // Revert to Front
     isFront = true;
     currentUniform = `${type}_${color}_front`;
     await loadUniform();
 
     pdf.save('your_uniform_design.pdf');
     showFeedback('تم حفظ التصميم كـ PDF بنجاح!', 'success');
-    console.log('PDF saved successfully');
   } catch (error) {
-    console.error('PDF save error:', error.message);
-    showFeedback(`فشل حفظ التصميم كـ PDF: ${error.message}`, 'danger');
+    console.error('PDF save error:', error);
+    showFeedback('فشل حفظ التصميم كـ PDF!', 'danger');
   }
 });
 
